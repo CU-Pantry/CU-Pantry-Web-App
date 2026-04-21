@@ -67,8 +67,12 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'school_db',
+        'USER': 'root',
+        'PASSWORD': '',
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
 
@@ -125,3 +129,7 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 # SMS settings
 SMS_API_KEY = os.getenv('SMS_API_KEY', '')
 SMS_FROM_NUMBER = os.getenv('SMS_FROM_NUMBER', '')
+
+
+# Bell & Howell IQ Cloud Integration
+BELL_HOWELL_WEBHOOK_TOKEN = os.getenv('BELL_HOWELL_WEBHOOK_TOKEN', 'change-me-in-production')
