@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --brand-green: #004e42;
+  --brand-gold: #fcd000;
+  --brand-olive: #7a9a01;
+  --brand-orange: #cf4520;
+  --brand-sky: #418fde;
+  --brand-blue: #002d72;
+  --brand-sand: #a2a569;
+  --brand-amber: #c6893f;
+  --brand-aqua: #7abfd4;
+  --brand-teal: #005587;
+  --neutral-1: #d7d2cb;
+  --neutral-6: #a59c94;
+  --neutral-11: #6e6259;
+
+  --bg-primary: #f5f2ec;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f0ece6;
+  --text-primary: #1d2c27;
+  --text-secondary: #47544e;
+  --text-muted: #6e6259;
+  --accent-primary: var(--brand-green);
+  --accent-secondary: var(--brand-gold);
+  --accent-glow: rgba(0, 78, 66, 0.12);
+  --status-overdue: var(--brand-orange);
+  --status-overdue-bg: rgba(207, 69, 32, 0.15);
+  --border-color: var(--neutral-1);
+  --shadow-sm: 0 6px 20px rgba(0, 78, 66, 0.08);
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
+}
+
+:root[data-theme='dark'] {
+  --bg-primary: #10261f;
+  --bg-secondary: #15342c;
+  --bg-tertiary: #1c4439;
+  --text-primary: #f7f4ec;
+  --text-secondary: #d9d2c5;
+  --text-muted: #b9af9f;
+  --accent-primary: #8fd1c0;
+  --accent-secondary: #fcd000;
+  --accent-glow: rgba(252, 208, 0, 0.12);
+  --status-overdue: #ff8e74;
+  --status-overdue-bg: rgba(255, 142, 116, 0.14);
+  --border-color: rgba(215, 210, 203, 0.24);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Montserrat', 'Segoe UI', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(at 0% 0%, var(--accent-glow) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(252, 208, 0, 0.16) 0px, transparent 52%);
+  background-attachment: fixed;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Montserrat', 'Segoe UI', sans-serif;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  outline: none;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}

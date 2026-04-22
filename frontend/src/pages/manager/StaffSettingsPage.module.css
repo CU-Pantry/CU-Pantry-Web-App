@@ -1,0 +1,218 @@
+.page {
+  display: grid;
+  gap: 18px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.backLink {
+  color: var(--accent-primary);
+  margin-bottom: 10px;
+  display: inline-block;
+  font-weight: 600;
+}
+
+.title {
+  font-size: 30px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+}
+
+.addButton {
+  border: 1px solid var(--accent-primary);
+  background: var(--accent-primary);
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  background: var(--bg-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px;
+}
+
+.tableHeadRow {
+  background: var(--bg-tertiary);
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 14px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.table th {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.permissionsRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.permissionPill {
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 6px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: capitalize;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.permissionPill:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-primary);
+}
+
+.permissionPillActive {
+  background: rgba(0, 78, 66, 0.14);
+  border-color: rgba(0, 78, 66, 0.36);
+  color: var(--accent-primary);
+}
+
+.statusSelect {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.statusActive {
+  background: rgba(0, 78, 66, 0.12);
+  border-color: rgba(0, 78, 66, 0.34);
+  color: var(--accent-primary);
+}
+
+.statusBlocked {
+  background: rgba(207, 69, 32, 0.12);
+  border-color: rgba(207, 69, 32, 0.34);
+  color: var(--status-overdue);
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.addForm {
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.fieldsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.input {
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.sectionLabel {
+  color: var(--text-secondary);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cancelButton {
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+.rowActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.editButton {
+  border: 1px solid var(--accent-primary);
+  background: transparent;
+  color: var(--accent-primary);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.editButton:hover {
+  background: rgba(0, 78, 66, 0.08);
+}
+
+.deleteButton {
+  border: 1px solid var(--status-overdue);
+  background: transparent;
+  color: var(--status-overdue);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.deleteButton:hover {
+  background: rgba(207, 69, 32, 0.08);
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 24px;
+  }
+}

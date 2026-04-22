@@ -1,0 +1,236 @@
+.sidebar {
+  width: 280px;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  z-index: 50;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  transition: width 0.25s ease, padding 0.25s ease;
+}
+
+.sidebarCollapsed {
+  width: 88px;
+  padding: 24px 10px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  margin-bottom: 48px;
+}
+
+.logoIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius-md);
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.logoText {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'Montserrat', 'Segoe UI', sans-serif;
+  letter-spacing: -0.03em;
+  background: linear-gradient(to right, var(--brand-green), var(--brand-gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hiddenLabel {
+  display: none;
+}
+
+.toggleButton {
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleButton:hover {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+:global([data-theme='dark']) .logoText {
+  background: linear-gradient(to right, var(--accent-secondary), #fff8cf);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.navItem {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  border-radius: var(--border-radius-md);
+  color: var(--text-secondary);
+  font-weight: 600;
+  overflow: hidden;
+  transform: translateX(0);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.navItemInner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.navItemInnerCollapsed {
+  justify-content: center;
+  padding: 12px 10px;
+}
+
+.navItem:hover {
+  color: var(--text-primary);
+  transform: translateX(4px);
+}
+
+.activePill {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--border-radius-md);
+  background: linear-gradient(120deg, var(--accent-glow), rgba(252, 208, 0, 0.2));
+  border: 1px solid rgba(0, 78, 66, 0.22);
+}
+
+.navItem.active {
+  color: var(--accent-primary);
+}
+
+.footer {
+  margin-top: auto;
+  padding: 24px 12px 0;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sidebarCollapsed .footer {
+  justify-content: center;
+  padding: 20px 0 0;
+}
+
+.sidebarCollapsed .avatar {
+  width: 42px;
+  height: 42px;
+}
+
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  overflow: hidden;
+  border: 2px solid var(--accent-glow);
+  box-shadow: 0 10px 28px rgba(0, 78, 66, 0.2);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.userName {
+  flex: 1;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logoutButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.logoutButton:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: 70px;
+    bottom: 0;
+    top: auto;
+    flex-direction: row;
+    padding: 0 16px;
+    border-right: none;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .logo,
+  .footer {
+    display: none;
+  }
+
+  .sidebarCollapsed {
+    width: 100%;
+    padding: 0 16px;
+  }
+
+  .nav {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+  }
+
+  .navItem {
+    flex-direction: column;
+    padding: 8px;
+    gap: 4px;
+  }
+
+  .navItem span {
+    display: none;
+  }
+}
