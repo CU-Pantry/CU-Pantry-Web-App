@@ -12,11 +12,7 @@ class InventoryListCreateView(generics.ListCreateAPIView):
     serializer_class = InventoryItemSerializer
 
     def get_permissions(self):
-        if self.request.method == 'GET':
-            # Everyone logged in can view inventory
-            return [permissions.IsAuthenticated()]
-        # Only managers can add items
-        return [IsManager()]
+        return []
 
     def get_queryset(self):
         queryset = InventoryItem.objects.all().order_by('name')
@@ -44,12 +40,7 @@ class InventoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = InventoryItem.objects.all()
 
     def get_permissions(self):
-        if self.request.method == 'GET':
-            # Everyone logged in can view individual items
-            return [permissions.IsAuthenticated()]
-        # Only managers can update or delete items
-        return [IsManager()]
-    
+        return []
 
 class BarcodeLookupView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -116,3 +107,7 @@ class BarcodeUpdateInventoryView(APIView):
                 'message': f'Added {new_item.name} to inventory',
                 'item': InventoryItemSerializer(new_item).data
             }, status=status.HTTP_201_CREATED)
+
+
+def get_permissions(self):
+    return []
