@@ -23,6 +23,7 @@ INSTALLED_APPS = [
 
     # Third party
     'rest_framework',
+    'corsheaders', 
     #'django_cas_ng',
 
     # Our apps
@@ -34,6 +35,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -133,3 +135,17 @@ SMS_FROM_NUMBER = os.getenv('SMS_FROM_NUMBER', '')
 
 # Bell & Howell IQ Cloud Integration
 BELL_HOWELL_WEBHOOK_TOKEN = os.getenv('BELL_HOWELL_WEBHOOK_TOKEN', 'change-me-in-production')
+
+
+# CORS Settings
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',    # Vite default port
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
