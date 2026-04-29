@@ -7,7 +7,7 @@ from .serializers import LockerSerializer, LockerAssignSerializer, TemperatureLo
 
 class LockerListView(generics.ListAPIView):
     serializer_class = LockerSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = []
 
     def get_queryset(self):
         user = self.request.user
