@@ -1,31 +1,65 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Trash2, ChevronDown } from 'lucide-react';
-import { ordersSeed, getOrderItems, getOrderTotalQuantity, migratePantryOrder, type PantryOrder } from '../../../data/fakeData';
-import { loadCollection, saveCollection, STORAGE_KEYS } from '../../../data/localStore';
-import ConfirmDialog from '../../../components/ui/ConfirmDialog';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
+import { ordersApi, type Order, type OrderStatus } from '../../../services/api';
 import SuccessToast from '../../../components/ui/SuccessToast';
 import styles from '../StaffPages.module.css';
 
-type GroupedOrder = {
-  requester: string;
-  requesterType: 'student' | 'teacher';
-  orders: PantryOrder[];
+const STATUS_LABELS: Record<string, string> = {
+  submitted: 'Submitted',
+  approved: 'Approved',
+  locker_assigned: 'Locker Assigned',
+  ready: 'Ready',
+  picked_up: 'Picked Up',
+  expired: 'Expired',
+  compromised: 'Compromised',
+};
+
+const STATUS_ICONS: Record<string, string> = {
+  submitted: '⏳',
+  approved: '✓',
+  locker_assigned: '🔒',
+  ready: '📦',
+  picked_up: '✓✓',
+  expired: '⌛',
+  compromised: '⚠️',
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  submitted: '#FF9800',
+  approved: '#4CAF50',
+  locker_assigned: '#9C27B0',
+  ready: '#2196F3',
+  picked_up: '#1B5E20',
+  expired: '#757575',
+  compromised: '#F44336',
+};
+
+const VALID_TRANSITIONS: Record<string, OrderStatus[]> = {
+  submitted: ['approved'],
+  approved: ['locker_assigned'],
+  locker_assigned: ['ready'],
+  ready: ['picked_up', 'expired', 'compromised'],
+  picked_up: [],
+  expired: [],
+  compromised: [],
 };
 
 export default function OrdersPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<PantryOrder[]>(() =>
-    loadCollection<PantryOrder[]>(STORAGE_KEYS.orders, ordersSeed).map(migratePantryOrder)
-  );
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [orderToDelete, setOrderToDelete] = useState<PantryOrder | null>(null);
-  const [expandedRequesters, setExpandedRequesters] = useState<Set<string>>(new Set());
+  const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    saveCollection(STORAGE_KEYS.orders, orders);
-  }, [orders]);
+    ordersApi.getAll()
+      .then(setOrders)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     const state = location.state as { toast?: string } | null;
@@ -43,110 +77,59 @@ export default function OrdersPage() {
     return () => window.clearTimeout(timeout);
   }, [toastMessage]);
 
-  // Group orders by requester name
   const groupedOrders = useMemo(() => {
-    const groups: Record<string, PantryOrder[]> = {};
-    
+    const groups: Record<string, Order[]> = {};
     orders.forEach((order) => {
-      if (!groups[order.requesterName]) {
-        groups[order.requesterName] = [];
+      if (!groups[order.student_username]) {
+        groups[order.student_username] = [];
       }
-      groups[order.requesterName].push(order);
+      groups[order.student_username].push(order);
     });
-
-    // Convert to array and sort by name
-    return Object.entries(groups)
-      .map(([requester, orderList]) => {
-        const firstOrder = orderList[0];
-        return {
-          requester,
-          requesterType: firstOrder.requesterType,
-          orders: orderList.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime()),
-        };
-      })
-      .sort((a, b) => a.requester.localeCompare(b.requester));
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [orders]);
 
-  const stats = useMemo(() => {
-    return {
-      total: orders.length,
-      pending: orders.filter((o) => o.status === 'pending').length,
-      approved: orders.filter((o) => o.status === 'approved').length,
-      ready: orders.filter((o) => o.status === 'ready').length,
-      delivered: orders.filter((o) => o.status === 'delivered').length,
-    };
-  }, [orders]);
+  const stats = useMemo(() => ({
+    total: orders.length,
+    submitted: orders.filter((o) => o.status === 'submitted').length,
+    approved: orders.filter((o) => o.status === 'approved').length,
+    ready: orders.filter((o) => o.status === 'ready').length,
+    picked_up: orders.filter((o) => o.status === 'picked_up').length,
+  }), [orders]);
 
-  const toggleExpanded = (requester: string) => {
-    const newExpanded = new Set(expandedRequesters);
-    if (newExpanded.has(requester)) {
-      newExpanded.delete(requester);
+  const toggleExpanded = (username: string) => {
+    const newExpanded = new Set(expandedUsers);
+    if (newExpanded.has(username)) {
+      newExpanded.delete(username);
     } else {
-      newExpanded.add(requester);
+      newExpanded.add(username);
     }
-    setExpandedRequesters(newExpanded);
+    setExpandedUsers(newExpanded);
   };
 
-  const getGroupStats = (group: GroupedOrder) => ({
-    total: group.orders.length,
-    pending: group.orders.filter((o) => o.status === 'pending').length,
-    approved: group.orders.filter((o) => o.status === 'approved').length,
-    ready: group.orders.filter((o) => o.status === 'ready').length,
-    delivered: group.orders.filter((o) => o.status === 'delivered').length,
-  });
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'pending':
-        return '#FF9800';
-      case 'approved':
-        return '#4CAF50';
-      case 'ready':
-        return '#2196F3';
-      case 'delivered':
-        return '#1B5E20';
-      default:
-        return 'var(--text-secondary)';
+  const handleStatusChange = async (order: Order, newStatus: OrderStatus) => {
+    try {
+      const updated = await ordersApi.updateStatus(order.id, newStatus);
+      setOrders((current) =>
+        current.map((o) => (o.id === updated.id ? updated : o))
+      );
+      setToastMessage(`Order #${order.id} updated to ${STATUS_LABELS[newStatus]}`);
+    } catch (err: any) {
+      setToastMessage(`Error: ${err.message}`);
     }
   };
 
-  const getStatusIcon = (status: string): string => {
-    switch (status) {
-      case 'pending':
-        return '⏳';
-      case 'approved':
-        return '✓';
-      case 'ready':
-        return '📦';
-      case 'delivered':
-        return '✓✓';
-      default:
-        return '●';
-    }
-  };
-
-
-
-  const confirmDelete = () => {
-    if (!orderToDelete) return;
-    setOrders((current) => current.filter((row) => row.id !== orderToDelete.id));
-    setOrderToDelete(null);
-    setToastMessage('Order deleted successfully.');
-  };
+  if (loading) return <section className={styles.page}><p>Loading orders...</p></section>;
+  if (error) return <section className={styles.page}><p style={{ color: 'red' }}>Error: {error}</p></section>;
 
   return (
     <section className={styles.page}>
       <header className={styles.headerRow}>
         <div>
           <h1 className={styles.title}>Orders Management</h1>
-          <p className={styles.subtitle}>All orders grouped by requester for easy tracking.</p>
+          <p className={styles.subtitle}>All orders grouped by student.</p>
         </div>
-        <Link to="/orders/new" className={`${styles.button} ${styles.buttonPrimary}`}>
-          + Create Order
-        </Link>
       </header>
 
-      {/* Stats */}
       <article className={styles.card}>
         <div className={styles.grid}>
           <div className={styles.metric}>
@@ -154,65 +137,39 @@ export default function OrdersPage() {
             <p className={styles.metricValue}>{stats.total}</p>
           </div>
           <div className={styles.metric}>
-            <p className={styles.metricLabel}>Pending</p>
-            <p className={styles.metricValue}>{stats.pending}</p>
+            <p className={styles.metricLabel}>Submitted</p>
+            <p className={styles.metricValue}>{stats.submitted}</p>
           </div>
           <div className={styles.metric}>
             <p className={styles.metricLabel}>Ready</p>
             <p className={styles.metricValue}>{stats.ready}</p>
           </div>
           <div className={styles.metric}>
-            <p className={styles.metricLabel}>Delivered</p>
-            <p className={styles.metricValue}>{stats.delivered}</p>
+            <p className={styles.metricLabel}>Picked Up</p>
+            <p className={styles.metricValue}>{stats.picked_up}</p>
           </div>
         </div>
       </article>
 
-      {/* Grouped Orders */}
       <article className={styles.card}>
         {groupedOrders.length === 0 ? (
-          <p className={styles.empty}>No orders available.</p>
+          <p className={styles.empty}>No orders yet.</p>
         ) : (
           <div className={styles.groupedOrdersContainer}>
-            {groupedOrders.map((group) => {
-              const isExpanded = expandedRequesters.has(group.requester);
-              const groupStats = getGroupStats(group);
+            {groupedOrders.map(([username, userOrders]) => {
+              const isExpanded = expandedUsers.has(username);
               return (
-                <div key={group.requester} className={styles.requesterGroup}>
+                <div key={username} className={styles.requesterGroup}>
                   <button
-                    onClick={() => toggleExpanded(group.requester)}
+                    onClick={() => toggleExpanded(username)}
                     className={styles.requesterHeader}
                   >
                     <div className={styles.requesterInfo}>
-                      <h3 className={styles.requesterName}>{group.requester}</h3>
-                      <span className={`${styles.badge} ${styles[`badge${group.requesterType}`]}`}>
-                        {group.requesterType}
-                      </span>
+                      <h3 className={styles.requesterName}>{username}</h3>
+                      <span className={styles.badge}>student</span>
                       <p className={styles.requesterOrderCount}>
-                        {groupStats.total} order{groupStats.total !== 1 ? 's' : ''}
+                        {userOrders.length} order{userOrders.length !== 1 ? 's' : ''}
                       </p>
-                    </div>
-                    <div className={styles.requesterStats}>
-                      {groupStats.pending > 0 && (
-                        <div className={styles.statBadge} style={{ background: 'rgba(255, 152, 0, 0.15)' }}>
-                          <span>⏳</span> {groupStats.pending}
-                        </div>
-                      )}
-                      {groupStats.approved > 0 && (
-                        <div className={styles.statBadge} style={{ background: 'rgba(76, 175, 80, 0.15)' }}>
-                          <span>✓</span> {groupStats.approved}
-                        </div>
-                      )}
-                      {groupStats.ready > 0 && (
-                        <div className={styles.statBadge} style={{ background: 'rgba(33, 150, 243, 0.15)' }}>
-                          <span>📦</span> {groupStats.ready}
-                        </div>
-                      )}
-                      {groupStats.delivered > 0 && (
-                        <div className={styles.statBadge} style={{ background: 'rgba(27, 94, 32, 0.15)' }}>
-                          <span>✓✓</span> {groupStats.delivered}
-                        </div>
-                      )}
                     </div>
                     <ChevronDown
                       size={20}
@@ -222,63 +179,54 @@ export default function OrdersPage() {
 
                   {isExpanded && (
                     <div className={styles.requesterOrders}>
-                      {group.orders.map((order) => (
+                      {userOrders.map((order) => (
                         <div key={order.id} className={styles.orderRow}>
                           <div className={styles.orderLeft}>
                             <div
                               className={styles.statusIconSmall}
                               style={{
-                                background: `${getStatusColor(order.status)}20`,
-                                borderColor: getStatusColor(order.status),
+                                background: `${STATUS_COLORS[order.status]}20`,
+                                borderColor: STATUS_COLORS[order.status],
                               }}
                             >
-                              {getStatusIcon(order.status)}
+                              {STATUS_ICONS[order.status]}
                             </div>
                             <div className={styles.orderDetails}>
-                              <div className={styles.itemChips}>
-                                {getOrderItems(order).map((item) => (
-                                  <span key={`${order.id}-${item.itemName}`} className={styles.itemChip}>
-                                    {item.itemName} <span className={styles.itemQuantity}>x{item.quantity}</span>
-                                  </span>
-                                ))}
-                              </div>
                               <p className={styles.orderMeta}>
-                                Qty: {getOrderTotalQuantity(order)} • {order.requestedAt}
+                                Order #{order.id} • Week {order.week_number}/{order.year}
+                                {order.requires_lower_locker && ' • ♿ Lower locker'}
+                              </p>
+                              <p className={styles.orderMeta}>
+                                {new Date(order.created_at).toLocaleDateString()}
                               </p>
                             </div>
                           </div>
+
                           <div className={styles.orderCenter}>
                             <select
                               className={styles.select}
                               value={order.status}
-                              onChange={(event) =>
-                                setOrders((current) =>
-                                  current.map((row) =>
-                                    row.id === order.id
-                                      ? { ...row, status: event.target.value as PantryOrder['status'] }
-                                      : row,
-                                  ),
-                                )
+                              onChange={(e) =>
+                                handleStatusChange(order, e.target.value as OrderStatus)
                               }
                             >
-                              <option value="pending">Pending</option>
-                              <option value="approved">Approved</option>
-                              <option value="ready">Ready</option>
-                              <option value="delivered">Delivered</option>
+                              <option value={order.status}>
+                                {STATUS_LABELS[order.status]}
+                              </option>
+                              {VALID_TRANSITIONS[order.status]?.map((s) => (
+                                <option key={s} value={s}>
+                                  → {STATUS_LABELS[s]}
+                                </option>
+                              ))}
                             </select>
                           </div>
+
                           <div className={styles.orderRight}>
-                            {order.lockerId && (
-                              <span className={styles.lockerBadge}>{order.lockerId}</span>
+                            {order.pin_code && (
+                              <span className={styles.lockerBadge}>
+                                PIN: {order.pin_code}
+                              </span>
                             )}
-                            <button
-                              className={`${styles.iconAction} ${styles.iconDanger}`}
-                              type="button"
-                              onClick={() => setOrderToDelete(order)}
-                              title="Delete order"
-                            >
-                              <Trash2 size={16} />
-                            </button>
                           </div>
                         </div>
                       ))}
@@ -291,13 +239,6 @@ export default function OrdersPage() {
         )}
       </article>
 
-      <ConfirmDialog
-        open={Boolean(orderToDelete)}
-        title="Delete order"
-        message={`Are you sure you want to delete order ${orderToDelete?.id ?? ''}?`}
-        onCancel={() => setOrderToDelete(null)}
-        onConfirm={confirmDelete}
-      />
       <SuccessToast message={toastMessage} />
     </section>
   );

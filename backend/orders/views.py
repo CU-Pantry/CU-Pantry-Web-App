@@ -14,7 +14,7 @@ from notifications.utils import (
 
 class OrderListCreateView(generics.ListCreateAPIView):
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = []
 
     def get_queryset(self):
         user = self.request.user
@@ -44,7 +44,7 @@ class OrderListCreateView(generics.ListCreateAPIView):
 
 class OrderDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = []
 
     def get_queryset(self):
         user = self.request.user
