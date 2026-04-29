@@ -95,3 +95,36 @@ class CurrentUserView(APIView):
             'role': role,
             'is_staff': user.is_staff,
         })
+
+
+from django.contrib.auth.models import User, Group
+
+
+class UserListView(APIView):
+    permission_classes = []
+
+    def get(self, request):
+        users = User.objects.all().order_by('username')
+        data = []
+        for user in users:
+            groups = user.groups.values_list('name', flat=True)
+            role = 'student'
+            if user.is_superuser:
+                role = 'admin'
+            elif 'Admin' in groups:
+                role = 'admin'
+            elif 'Manager' in groups:
+                role = 'manager'
+            elif 'Volunteer' in groups:
+                role = 'volunteer'
+
+            data.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'role': role,
+                'is_active': user.is_active,
+            })
+        return Response(data)

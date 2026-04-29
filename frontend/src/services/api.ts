@@ -178,3 +178,19 @@ export type TemperatureLog = {
   recorded_at: string;
   is_violation: boolean;
 };
+
+// ─── USERS ────────────────────────────────────────────────
+
+export type AppUser = {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: 'student' | 'volunteer' | 'manager' | 'admin';
+  is_active: boolean;
+};
+
+export const usersApi = {
+  getAll: () => request<AppUser[]>('/auth/users/'),
+};
