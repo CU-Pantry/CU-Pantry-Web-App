@@ -1,36 +1,61 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Boxes, ClipboardList, DoorOpen, History, ShoppingCart, ShieldAlert, Users } from 'lucide-react';
+import { Boxes, ClipboardList, DoorOpen, Users } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
-import { inventorySeed, lockerSeed, ordersSeed, usersSeed } from '../data/fakeData';
+import { inventoryApi, ordersApi, lockersApi, usersApi } from '../services/api';
 import styles from './Dashboard.module.css';
+
+type Stats = {
+  inventory: number;
+  orders: number;
+  lockers: number;
+  users: number;
+  submitted: number;
+  available: number;
+};
 
 export default function Dashboard() {
   const { user, hasPermission } = useAuth();
+  const [stats, setStats] = useState<Stats>({
+    inventory: 0,
+    orders: 0,
+    lockers: 0,
+    users: 0,
+    submitted: 0,
+    available: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.allSettled([
+      inventoryApi.getAll(),
+      ordersApi.getAll(),
+      lockersApi.getAll(),
+      usersApi.getAll(),
+    ]).then(([inventoryRes, ordersRes, lockersRes, usersRes]) => {
+      const inventory = inventoryRes.status === 'fulfilled' ? inventoryRes.value : [];
+      const orders = ordersRes.status === 'fulfilled' ? ordersRes.value : [];
+      const lockers = lockersRes.status === 'fulfilled' ? lockersRes.value : [];
+      const users = usersRes.status === 'fulfilled' ? usersRes.value : [];
+
+      setStats({
+        inventory: inventory.length,
+        orders: orders.length,
+        lockers: lockers.length,
+        users: users.length,
+        submitted: orders.filter((o) => o.status === 'submitted').length,
+        available: lockers.filter((l) => l.status === 'available').length,
+      });
+      setLoading(false);
+    });
+  }, []);
 
   const modules = [
-    {
-      key: 'pantry',
-      label: 'Order from Pantry',
-      icon: <ShoppingCart size={18} />,
-      value: ordersSeed.filter((order) => order.status === 'pending').length,
-      unit: 'pending requests',
-      path: '/pantry',
-      allowed: user?.role === 'student' || user?.role === 'teacher',
-    },
-    {
-      key: 'my-orders',
-      label: 'My Orders',
-      icon: <History size={18} />,
-      value: ordersSeed.filter((order) => order.requesterName === user?.name).length,
-      unit: 'orders in history',
-      path: '/my-orders',
-      allowed: user?.role === 'student' || user?.role === 'teacher',
-    },
     {
       key: 'inventory',
       label: 'Inventory',
       icon: <Boxes size={18} />,
-      value: inventorySeed.length,
+      value: loading ? '...' : stats.inventory,
       unit: 'tracked items',
       path: '/inventory',
       allowed: hasPermission('inventory'),
@@ -39,8 +64,8 @@ export default function Dashboard() {
       key: 'orders',
       label: 'Orders',
       icon: <ClipboardList size={18} />,
-      value: ordersSeed.length,
-      unit: 'total orders',
+      value: loading ? '...' : stats.orders,
+      unit: `total orders (${stats.submitted} submitted)`,
       path: '/orders',
       allowed: hasPermission('orders'),
     },
@@ -48,8 +73,8 @@ export default function Dashboard() {
       key: 'lockers',
       label: 'Lockers',
       icon: <DoorOpen size={18} />,
-      value: lockerSeed.length,
-      unit: 'locker spaces',
+      value: loading ? '...' : stats.lockers,
+      unit: `locker spaces (${stats.available} available)`,
       path: '/lockers',
       allowed: hasPermission('lockers'),
     },
@@ -57,19 +82,10 @@ export default function Dashboard() {
       key: 'users',
       label: 'Users',
       icon: <Users size={18} />,
-      value: usersSeed.length,
+      value: loading ? '...' : stats.users,
       unit: 'registered users',
       path: '/users',
       allowed: hasPermission('users'),
-    },
-    {
-      key: 'manage-staff',
-      label: 'Manage Staff',
-      icon: <ShieldAlert size={18} />,
-      value: usersSeed.filter((u) => u.role === 'staff' || u.role === 'manager').length,
-      unit: 'staff accounts',
-      path: '/settings/staff',
-      allowed: user?.role === 'manager',
     },
   ];
 
@@ -103,7 +119,6 @@ export default function Dashboard() {
           </div>
         ))}
       </article>
-
     </section>
   );
 }
