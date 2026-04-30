@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Pencil, Trash2 } from 'lucide-react';
 import { inventoryApi, type InventoryItem } from '../../../services/api';
@@ -20,6 +20,12 @@ export default function InventoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
+  const [barcodeInput, setBarcodeInput] = useState('');
+  const [barcodeResult, setBarcodeResult] = useState<any>(null);
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const [barcodeError, setBarcodeError] = useState<string | null>(null);
+  const [scanQuantity, setScanQuantity] = useState(1);
+  const barcodeRef = useRef<HTMLInputElement>(null);
 
   // Load inventory from real API
   useEffect(() => {
@@ -49,7 +55,38 @@ export default function InventoryPage() {
     () => items.reduce((acc, item) => acc + item.quantity, 0),
     [items]
   );
+  const handleBarcodeScan = async (barcode: string) => {
+  if (!barcode.trim()) return;
+  setBarcodeLoading(true);
+  setBarcodeError(null);
+  setBarcodeResult(null);
+  try {
+    const result = await inventoryApi.lookupBarcode(barcode.trim());
+    setBarcodeResult(result);
+  } catch (err: any) {
+    setBarcodeError(err.message);
+  }
+  setBarcodeLoading(false);
+};
 
+const handleAddScannedItem = async () => {
+  if (!barcodeResult) return;
+  try {
+    await inventoryApi.scanBarcode(barcodeInput.trim(), scanQuantity);
+    const updated = await inventoryApi.getAll();
+    setItems(updated);
+    setToastMessage(
+      barcodeResult.existing_item
+        ? `Updated ${barcodeResult.name} quantity by ${scanQuantity}`
+        : `Added ${barcodeResult.name} to inventory`
+    );
+    setBarcodeInput('');
+    setBarcodeResult(null);
+    setScanQuantity(1);
+  } catch (err: any) {
+    setBarcodeError(err.message);
+  }
+};
   const confirmDelete = async () => {
     if (!itemToDelete) return;
     try {
@@ -89,6 +126,140 @@ export default function InventoryPage() {
           Add Item
         </Link>
       </header>
+      {/* Barcode Scanner Section */}
+<article className={styles.card} style={{ marginBottom: 24 }}>
+  <div style={{ padding: '16px 0' }}>
+    <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
+      📷 Barcode Scanner
+    </h2>
+    <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16 }}>
+      Click the input below and scan a barcode with your Tera 8100 scanner, or type it manually. Press Enter to look up.
+    </p>
+
+    <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+      <input
+        ref={barcodeRef}
+        type="text"
+        value={barcodeInput}
+        onChange={(e) => setBarcodeInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') handleBarcodeScan(barcodeInput);
+        }}
+        placeholder="Scan or type barcode here..."
+        style={{
+          flex: 1,
+          padding: '10px 14px',
+          borderRadius: 8,
+          border: '1px solid var(--border-color)',
+          fontSize: 14,
+          background: 'var(--bg-primary)',
+          color: 'var(--text-primary)',
+        }}
+      />
+      <button
+        onClick={() => handleBarcodeScan(barcodeInput)}
+        disabled={barcodeLoading || !barcodeInput.trim()}
+        style={{
+          padding: '10px 20px',
+          borderRadius: 8,
+          border: 'none',
+          background: 'var(--accent-primary)',
+          color: '#fff',
+          fontWeight: 600,
+          cursor: barcodeLoading || !barcodeInput.trim() ? 'not-allowed' : 'pointer',
+          opacity: barcodeLoading || !barcodeInput.trim() ? 0.6 : 1,
+        }}
+      >
+        {barcodeLoading ? 'Looking up...' : 'Look Up'}
+      </button>
+    </div>
+
+    {barcodeError && (
+      <p style={{ color: 'red', fontSize: 14, marginBottom: 12 }}>⚠️ {barcodeError}</p>
+    )}
+
+    {barcodeResult && (
+      <div style={{
+        padding: 16,
+        borderRadius: 8,
+        border: '1px solid var(--border-color)',
+        background: 'var(--bg-secondary)',
+        marginBottom: 16,
+      }}>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          {barcodeResult.image_url && (
+            <img
+              src={barcodeResult.image_url}
+              alt={barcodeResult.name}
+              style={{ width: 80, height: 80, objectFit: 'contain', borderRadius: 8 }}
+            />
+          )}
+          <div style={{ flex: 1 }}>
+            <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{barcodeResult.name}</p>
+            {barcodeResult.brands && (
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 2 }}>Brand: {barcodeResult.brands}</p>
+            )}
+            {barcodeResult.quantity && (
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>Size: {barcodeResult.quantity}</p>
+            )}
+            {barcodeResult.existing_item ? (
+              <p style={{ fontSize: 13, color: 'green', fontWeight: 600 }}>✅ Already in inventory — will update quantity</p>
+            ) : (
+              <p style={{ fontSize: 13, color: 'var(--accent-primary)', fontWeight: 600 }}>🆕 New item — will be added to inventory</p>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 16, alignItems: 'center' }}>
+          <label style={{ fontSize: 14, fontWeight: 600 }}>Quantity to add:</label>
+          <input
+            type="number"
+            min={1}
+            max={999}
+            value={scanQuantity}
+            onChange={(e) => setScanQuantity(Number(e.target.value))}
+            style={{
+              width: 80,
+              padding: '8px 12px',
+              borderRadius: 8,
+              border: '1px solid var(--border-color)',
+              fontSize: 14,
+              background: 'var(--bg-primary)',
+              color: 'var(--text-primary)',
+            }}
+          />
+          <button
+            onClick={handleAddScannedItem}
+            style={{
+              padding: '8px 20px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'green',
+              color: '#fff',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Add to Inventory
+          </button>
+          <button
+            onClick={() => { setBarcodeResult(null); setBarcodeInput(''); setScanQuantity(1); }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: 8,
+              border: '1px solid var(--border-color)',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+</article>
 
       <article className={styles.card}>
         <div className={styles.grid}>
