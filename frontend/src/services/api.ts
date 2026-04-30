@@ -34,9 +34,15 @@ async function request<T>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || error.error || 'API request failed');
-  }
+  const error = await response.json().catch(() => ({}));
+  throw new Error(
+    error.detail ||
+    error.error ||
+    error.non_field_errors?.[0] ||
+    Object.values(error)[0]?.[0] ||
+    'API request failed'
+  );
+}
 
   return response.json();
 }

@@ -38,32 +38,42 @@ export default function PantryOrderPage() {
   };
 
   const handleSubmit = async () => {
-    if (selectedIds.size < 5) {
-      setOrderError('Please select at least 5 items.');
-      return;
-    }
-    if (selectedIds.size > 10) {
-      setOrderError('Please select no more than 10 items.');
-      return;
-    }
+  if (selectedIds.size < 5) {
+    setOrderError('Please select at least 5 items.');
+    return;
+  }
+  if (selectedIds.size > 10) {
+    setOrderError('Please select no more than 10 items.');
+    return;
+  }
 
-    setSubmitting(true);
-    setOrderError(null);
+  setSubmitting(true);
+  setOrderError(null);
 
-    try {
-      await ordersApi.create({
-        requires_lower_locker: requiresLowerLocker,
-        items: Array.from(selectedIds),
-      });
-      setSuccessMessage(
-        'Your order has been submitted! Staff will prepare your items and assign a locker. You will receive an email with pickup details.'
+  try {
+    await ordersApi.create({
+      requires_lower_locker: requiresLowerLocker,
+      items: Array.from(selectedIds),
+    });
+    setSuccessMessage(
+      'Your order has been submitted! Staff will prepare your items and assign a locker. You will receive an email with pickup details.'
+    );
+    setSelectedIds(new Set());
+  } catch (err: any) {
+    if (
+      err.message?.includes('already placed') ||
+      err.message?.includes('weekly') ||
+      err.message?.includes('Monday')
+    ) {
+      setOrderError(
+        'You have already placed your locker order for this week. You may place a new order starting Monday.'
       );
-      setSelectedIds(new Set());
-    } catch (err: any) {
-      setOrderError(err.message);
+    } else {
+      setOrderError(err.message || 'Something went wrong. Please try again.');
     }
-    setSubmitting(false);
-  };
+  }
+  setSubmitting(false);
+};
 
   if (loading) return <section className={styles.page}><p>Loading inventory...</p></section>;
   if (error) return <section className={styles.page}><p style={{ color: 'red' }}>Error: {error}</p></section>;
