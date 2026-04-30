@@ -1,17 +1,36 @@
 const API_BASE_URL = 'http://localhost:8000/api';
 
 // Helper function for all API calls
+async function getCsrfToken(): Promise<string> {
+  const response = await fetch(`http://localhost:8000/api/auth/csrf/`, {
+    credentials: 'include',
+  });
+  const data = await response.json();
+  return data.csrfToken;
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const isWriteMethod = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(
+    options.method?.toUpperCase() ?? 'GET'
+  );
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (isWriteMethod) {
+    const csrfToken = await getCsrfToken();
+    headers['X-CSRFToken'] = csrfToken;
+  }
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
-    credentials: 'include', // include session cookies
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    credentials: 'include',
+    headers,
   });
 
   if (!response.ok) {
@@ -21,7 +40,6 @@ async function request<T>(
 
   return response.json();
 }
-
 // ─── INVENTORY ────────────────────────────────────────────
 
 export const inventoryApi = {

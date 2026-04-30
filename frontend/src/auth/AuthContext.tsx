@@ -68,10 +68,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
-  };
+  const logout = async () => {
+  try {
+    await import('../services/auth').then(({ authApi }) => authApi.logout());
+  } catch {
+    // ignore
+  }
+  setUser(null);
+  localStorage.removeItem(STORAGE_KEY);
+};
 
   const value = useMemo(
     () => ({
